@@ -5,7 +5,7 @@ Mother-tongue AI assistant for Jharkhand primary schools. Built with Flutter and
 ## Architecture
 
 - **Frontend:** Flutter app with classroom assistant, lesson generator, worksheet generator, and visual flashcards.
-- **Backend:** FastAPI service with Gemini for pedagogy/lesson generation and IndicTrans2 for Hindi ↔ Santali translation.
+- **Backend:** FastAPI service with Groq for pedagogy/lesson generation and IndicTrans2 for Hindi ↔ Santali translation.
 - **Offline-first:** Lesson packs, worksheets, and flashcards are designed for sync-then-offline use on low-cost Android tablets.
 
 ## Prerequisites
@@ -14,7 +14,7 @@ Mother-tongue AI assistant for Jharkhand primary schools. Built with Flutter and
 - Python 3.11+
 - Android device or emulator
 - Windows/macOS/Linux for backend development
-- Gemini API key
+- Groq API key
 - Hugging Face access for `ai4bharat/indictrans2-indic-indic-dist-320M`
 
 ## Flutter Setup
@@ -52,9 +52,9 @@ Mother-tongue AI assistant for Jharkhand primary schools. Built with Flutter and
    ```
 
 4. Configure environment:
-   - Rename or edit `.env`
-   - Set `GEMINI_API_KEY`
-   - If using IndicTrans2 gated model, set `HF_TOKEN` as well
+    - Rename or edit `.env`
+    - Set `GROQ_API_KEY`
+    - If using IndicTrans2 gated model, set `HF_TOKEN` as well
 
 5. Start the server:
    ```powershell
@@ -76,11 +76,10 @@ Mother-tongue AI assistant for Jharkhand primary schools. Built with Flutter and
 
 ## Key Backend Services
 
-- `backend/services/ai_service.py` — Gemini classroom translation
 - `backend/services/indictrans_service.py` — IndicTrans2 Hindi ↔ Santali
-- `backend/services/lesson_service.py` — Gemini lesson generation
-- `backend/services/worksheet_service.py` — Gemini worksheet generation
-- `backend/services/flashcard_service.py` — Gemini flashcard generation
+- `backend/services/lesson_service.py` — Groq lesson generation
+- `backend/services/worksheet_service.py` — Groq worksheet generation
+- `backend/services/flashcard_service.py` — Groq flashcard generation
 - `backend/services/pdf_service.py` — ReportLab worksheet PDF generation
 
 ## Important Notes

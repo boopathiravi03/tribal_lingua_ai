@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../services/api_service.dart';
 
+import '../../services/offline_storage_service.dart';
+
 
 class LessonGeneratorScreen
     extends StatefulWidget {
@@ -62,6 +64,8 @@ class _LessonGeneratorScreenState
         result = data;
         loading = false;
       });
+
+      await OfflineStorageService.saveLesson(data);
 
     } catch (e) {
 

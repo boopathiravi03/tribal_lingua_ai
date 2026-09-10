@@ -38,6 +38,8 @@ dependencies:
   speech_to_text: ^7.4.0
   flutter_tts: ^4.2.5
   shared_preferences: ^2.5.5
+  pdf: ^3.13.0
+  printing: ^5.15.0
 
 dev_dependencies:
   flutter_test:
@@ -63,6 +65,8 @@ flutter:
 
   assets:
     - assets/audio/santhali/
+    - assets/fonts/NotoSansOlChiki-Regular.ttf
+    - assets/fonts/NotoSansOlChiki-Bold.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

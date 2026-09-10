@@ -51,6 +51,39 @@ class ApiService {
 
 
   static Future<Map<String, dynamic>>
+      translateText({
+    required String text,
+    required String sourceLanguage,
+    required String targetLanguage,
+  }) async {
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/translate'),
+
+      headers: {
+        'Content-Type': 'application/json',
+      },
+
+      body: jsonEncode({
+        'text': text,
+        'source_language': sourceLanguage,
+        'target_language': targetLanguage,
+      }),
+    );
+
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Translation failed: ${response.body}',
+      );
+    }
+
+
+    return jsonDecode(response.body);
+  }
+
+
+  static Future<Map<String, dynamic>>
       generateLesson({
     required String className,
     required String subject,
@@ -96,6 +129,9 @@ class ApiService {
     required String subject,
     required String lesson,
     required String targetLanguage,
+    String grade = 'Grade 1',
+    String learningOutcome =
+        'Recognises and counts numbers',
   }) async {
 
     final response = await http.post(
@@ -112,6 +148,8 @@ class ApiService {
         'subject': subject,
         'lesson': lesson,
         'target_language': targetLanguage,
+        'grade': grade,
+        'learning_outcome': learningOutcome,
       }),
     );
 

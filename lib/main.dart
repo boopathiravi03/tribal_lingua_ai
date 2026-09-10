@@ -5,8 +5,14 @@ import '../services/tts_service.dart';
 import 'screens/lesson/lesson_generator_screen.dart';
 import 'screens/worksheet/worksheet_screen.dart';
 import 'screens/flashcards/flashcard_screen.dart';
+import 'screens/classroom/classroom_mode_screen.dart';
+import 'screens/offline/offline_content_screen.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await TtsService.initialize();
+
   runApp(const TribalLinguaAI());
 }
 
@@ -64,9 +70,8 @@ class _TeacherSetupScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               const Text(
-                'Classroom Setup',
+                'Teacher Dashboard',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -76,230 +81,177 @@ class _TeacherSetupScreenState
               const SizedBox(height: 8),
 
               const Text(
-                'Prepare your mother-tongue learning session',
+                'AI-powered vernacular education for tribal classrooms',
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey,
                 ),
               ),
 
-              const SizedBox(height: 30),
-
-              _buildDropdown(
-                title: 'Class',
-                value: selectedClass,
-                items: [
-                  'Class 1',
-                  'Class 2',
-                  'Class 3',
-                  'Class 4',
-                  'Class 5',
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    selectedClass = value!;
-                  });
-                },
-              ),
-
               const SizedBox(height: 20),
-
-              _buildDropdown(
-                title: 'Subject',
-                value: selectedSubject,
-                items: [
-                  'Foundational Mathematics',
-                  'Foundational Literacy',
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    selectedSubject = value!;
-                  });
-                },
-              ),
-
-              const SizedBox(height: 20),
-
-              _buildDropdown(
-                title: 'Lesson',
-                value: selectedLesson,
-                items: [
-                  'Counting 1–10',
-                  'Number Recognition',
-                  'Basic Addition',
-                  'Basic Words',
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    selectedLesson = value!;
-                  });
-                },
-              ),
-
-              const SizedBox(height: 25),
-
-              const Text(
-                'Mother Tongue',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 12),
 
               Row(
                 children: [
                   Expanded(
-                    child: _languageCard(
-                      'Santhali',
-                      selectedLanguage == 'Santhali',
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        border: Border.all(),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.language),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Teaching Language: $selectedLanguage',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _languageCard(
-                      'Mundari',
-                      selectedLanguage == 'Mundari',
+
+                  const SizedBox(width: 12),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _languageCard(
-                      'Ho',
-                      selectedLanguage == 'Ho',
+                    decoration: BoxDecoration(
+                      border: Border.all(),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.circle,
+                          size: 10,
+                          color: Colors.green,
+                        ),
+                        SizedBox(width: 7),
+                        Text('Online'),
+                      ],
                     ),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 35),
+              const SizedBox(height: 25),
 
-              SizedBox(
-                width: double.infinity,
-                height: 58,
-
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ClassroomScreen(
-                          language: selectedLanguage,
-                          lesson: selectedLesson,
-                          className: selectedClass,
-                          subject: selectedSubject,
+              GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 1.15,
+                children: [
+                  _featureCard(
+                    context,
+                    icon: Icons.menu_book,
+                    title: 'AI Lesson',
+                    subtitle: 'Generate bilingual lessons',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const LessonGeneratorScreen(),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
 
-                  icon: const Icon(Icons.play_arrow),
+                  _featureCard(
+                    context,
+                    icon: Icons.assignment,
+                    title: 'Worksheet',
+                    subtitle: 'Generate bilingual worksheets',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const WorksheetScreen(),
+                        ),
+                      );
+                    },
+                  ),
 
-                  label: const Text(
-                    'START LESSON',
+                  _featureCard(
+                    context,
+                    icon: Icons.style,
+                    title: 'Flashcards',
+                    subtitle: 'Create learning flashcards',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const FlashcardScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _featureCard(
+                    context,
+                    icon: Icons.record_voice_over,
+                    title: 'Classroom Mode',
+                    subtitle: 'Hindi ↔ Santali voice',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const ClassroomModeScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 18),
+
+              Card(
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.offline_bolt,
+                    size: 32,
+                  ),
+                  title: const Text(
+                    'Offline Learning',
                     style: TextStyle(
-                      fontSize: 17,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-              ),
-
-              const SizedBox(height: 15),
-
-              SizedBox(
-                width: double.infinity,
-                height: 58,
-
-                child: ElevatedButton.icon(
-                  onPressed: () {
+                  subtitle: const Text(
+                    'Access synchronized content without internet',
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                  ),
+                  onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
-                            const LessonGeneratorScreen(),
+                            const OfflineContentScreen(),
                       ),
                     );
                   },
-
-                  icon: const Icon(
-                    Icons.auto_awesome,
-                  ),
-
-                  label: const Text(
-                    '✨ AI LESSON GENERATOR',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
                 ),
               ),
 
               const SizedBox(height: 15),
-
-              SizedBox(
-                width: double.infinity,
-                height: 58,
-
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            const WorksheetScreen(),
-                      ),
-                    );
-                  },
-
-                  icon: const Icon(
-                    Icons.picture_as_pdf,
-                  ),
-
-                  label: const Text(
-                    '📄 WORKSHEET GENERATOR',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 15),
-
-              SizedBox(
-                width: double.infinity,
-                height: 58,
-
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            const FlashcardScreen(),
-                      ),
-                    );
-                  },
-
-                  icon: const Icon(
-                    Icons.style,
-                  ),
-
-                  label: const Text(
-                    '🧠 VISUAL FLASHCARDS',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
 
               Container(
                 width: double.infinity,
@@ -337,107 +289,54 @@ class _TeacherSetupScreenState
     );
   }
 
-  Widget _buildDropdown({
-    required String title,
-    required String value,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _featureCard(
+     BuildContext context, {
+     required IconData icon,
+     required String title,
+     required String subtitle,
+     required VoidCallback onTap,
+   }) {
+     return Card(
+       elevation: 2,
+       child: InkWell(
+         borderRadius: BorderRadius.circular(16),
+         onTap: onTap,
+         child: Padding(
+           padding: const EdgeInsets.all(16),
+           child: Column(
+             mainAxisAlignment: MainAxisAlignment.center,
+             children: [
+               Icon(
+                 icon,
+                 size: 38,
+               ),
 
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+               const SizedBox(height: 10),
 
-        const SizedBox(height: 8),
+               Text(
+                 title,
+                 textAlign: TextAlign.center,
+                 style: const TextStyle(
+                   fontSize: 17,
+                   fontWeight: FontWeight.bold,
+                 ),
+               ),
 
-        DropdownButtonFormField<String>(
-          initialValue: value,
+               const SizedBox(height: 5),
 
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-
-          items: items
-              .map(
-                (item) => DropdownMenuItem(
-                  value: item,
-                  child: Text(item),
-                ),
-              )
-              .toList(),
-
-          onChanged: onChanged,
-        ),
-      ],
-    );
-  }
-
-  Widget _languageCard(
-    String language,
-    bool selected,
-  ) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedLanguage = language;
-        });
-      },
-
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          vertical: 18,
-          horizontal: 8,
-        ),
-
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
-
-          border: Border.all(
-            color: selected
-                ? Colors.green
-                : Colors.grey.shade300,
-            width: selected ? 2 : 1,
-          ),
-
-          color: selected
-              ? Colors.green.withValues(alpha: 0.08)
-              : Colors.white,
-        ),
-
-        child: Column(
-          children: [
-            Icon(
-              Icons.translate,
-              color: selected
-                  ? Colors.green
-                  : Colors.grey,
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              language,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontWeight: selected
-                    ? FontWeight.bold
-                    : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+               Text(
+                 subtitle,
+                 textAlign: TextAlign.center,
+                 style: const TextStyle(
+                   fontSize: 12,
+                 ),
+               ),
+             ],
+           ),
+         ),
+       ),
+     );
+   }
 }
 
 class ClassroomScreen extends StatefulWidget {
@@ -471,8 +370,6 @@ class _ClassroomScreenState
 
   final VoiceService voiceService =
       VoiceService();
-  final TtsService ttsService =
-      TtsService();
 
   String translatedText = '';
 
@@ -915,9 +812,8 @@ class _ClassroomScreenState
 
                             try {
 
-                              await ttsService.speak(
-                                text: translatedText,
-                                language: 'sat-IN',
+                              await TtsService.speakSantali(
+                                translatedText,
                               );
 
                             } catch (e) {

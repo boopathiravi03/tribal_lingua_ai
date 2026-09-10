@@ -93,7 +93,7 @@ class IndicTransService:
             generated_tokens = (
                 self.model.generate(
                     **inputs,
-                    use_cache=True,
+                    use_cache=False,
                     min_length=0,
                     max_length=256,
                     num_beams=5,

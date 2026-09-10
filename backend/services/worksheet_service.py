@@ -2,34 +2,30 @@ import os
 import json
 
 from dotenv import load_dotenv
-from google import genai
+from services.groq_service import generate_text
 
 load_dotenv()
-
-api_key = os.getenv("GEMINI_API_KEY")
-
-if not api_key:
-    raise RuntimeError("GEMINI_API_KEY is missing")
-
-client = genai.Client(api_key=api_key)
-
-MODEL = "gemini-2.5-flash"
 
 
 def generate_worksheet(
     class_name: str,
     subject: str,
     lesson: str,
+    grade: str = "Grade 1",
+    learning_outcome: str = "Recognises and counts numbers",
 ):
 
     prompt = f"""
-You are an expert primary-school worksheet designer.
+You are an expert primary-school worksheet designer
+aligned with NIPUN Bharat foundational numeracy and
+literacy outcomes.
 
 Create a simple worksheet for:
 
-Class: {class_name}
+Grade: {grade}
 Subject: {subject}
 Lesson: {lesson}
+Learning Outcome: {learning_outcome}
 
 The worksheet is for foundational learning.
 
@@ -39,6 +35,8 @@ Use exactly this structure:
 
 {{
   "title": "...",
+  "grade": "{grade}",
+  "subject": "{subject}",
   "learning_outcome": "...",
   "questions": [
     {{
@@ -73,17 +71,15 @@ Rules:
 
 1. Suitable for primary-school children.
 2. Use simple language.
-3. Questions must directly relate to the lesson.
+3. Questions must directly relate to the lesson and learning outcome.
 4. Include exactly 5 questions.
 5. Do not use markdown.
 """
 
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=prompt,
-    )
-
-    text = response.text.strip()
+    text = generate_text(
+        prompt,
+        max_tokens=3000,
+    ).strip()
 
     if text.startswith("```"):
         text = text.replace("```json", "")

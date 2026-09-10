@@ -3,7 +3,6 @@ import time
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from services.ai_service import translate_for_classroom
 from services.indictrans_service import IndicTransService
 from services.lesson_service import generate_lesson
 from services.worksheet_service import generate_worksheet
@@ -41,6 +40,8 @@ class WorksheetRequest(BaseModel):
     subject: str
     lesson: str
     target_language: str = "Santali"
+    grade: str = "Grade 1"
+    learning_outcome: str = "Recognises and counts numbers"
 
 
 class FlashcardRequest(BaseModel):
@@ -260,6 +261,8 @@ def create_worksheet(request: WorksheetRequest):
             class_name=request.class_name,
             subject=request.subject,
             lesson=request.lesson,
+            grade=request.grade,
+            learning_outcome=request.learning_outcome,
         )
 
         questions = worksheet["questions"]
@@ -285,6 +288,8 @@ def create_worksheet(request: WorksheetRequest):
                 "target": translations[0],
             },
 
+            "grade": worksheet.get("grade", request.grade),
+            "subject": worksheet.get("subject", request.subject),
             "learning_outcome": {
                 "hindi":
                     worksheet["learning_outcome"],

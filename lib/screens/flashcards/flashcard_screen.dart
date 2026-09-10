@@ -1,131 +1,119 @@
 import 'package:flutter/material.dart';
-
 import '../../services/api_service.dart';
+import '../../services/tts_service.dart';
+import '../../services/offline_storage_service.dart';
 
-
-class FlashcardScreen
-    extends StatefulWidget {
-
-  const FlashcardScreen({
-    super.key,
-  });
+class FlashcardScreen extends StatefulWidget {
+  const FlashcardScreen({super.key});
 
   @override
-  State<FlashcardScreen> createState() =>
-      _FlashcardScreenState();
+  State<FlashcardScreen> createState() => _FlashcardScreenState();
 }
 
-
-class _FlashcardScreenState
-    extends State<FlashcardScreen> {
-
+class _FlashcardScreenState extends State<FlashcardScreen> {
   bool loading = false;
-
   List<dynamic> cards = [];
+  int currentIndex = 0;
 
-  int currentCard = 0;
-
-
-  Future<void> generate() async {
-
+  Future<void> generateFlashcards() async {
     setState(() {
       loading = true;
       cards = [];
-      currentCard = 0;
+      currentIndex = 0;
     });
 
-
     try {
-
-      final result =
-          await ApiService.generateFlashcards(
-
+      final result = await ApiService.generateFlashcards(
         className: 'Class 2',
-
-        subject:
-            'Foundational Mathematics',
-
+        subject: 'Foundational Mathematics',
         lesson: 'Counting 1-10',
-
         targetLanguage: 'Santali',
       );
 
-
-      setState(() {
-
-        cards =
-            result['cards'] as List;
-
-        loading = false;
-      });
-
-    } catch (e) {
-
-      setState(() {
-        loading = false;
-      });
-
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
+      setState(() {
+        cards = (result['flashcards'] ??
+                result['cards'] ??
+                []) as List<dynamic>;
+        loading = false;
+      });
+
+      await OfflineStorageService.saveFlashcards(result);
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        loading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Error: $e',
-          ),
+          content: Text('Flashcard error: $e'),
         ),
       );
     }
   }
 
+  void nextCard() {
+    if (cards.isEmpty) return;
+
+    setState(() {
+      currentIndex =
+          (currentIndex + 1) % cards.length;
+    });
+  }
+
+  void previousCard() {
+    if (cards.isEmpty) return;
+
+    setState(() {
+      currentIndex =
+          (currentIndex - 1 + cards.length) %
+              cards.length;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-
       appBar: AppBar(
-        title: const Text(
-          'Visual Flashcards',
-        ),
+        title: const Text('Visual Flashcards'),
       ),
-
       body: Padding(
-
-        padding:
-            const EdgeInsets.all(20),
-
+        padding: const EdgeInsets.all(20),
         child: Column(
-
           children: [
+            const Icon(
+              Icons.style,
+              size: 55,
+            ),
+
+            const SizedBox(height: 10),
 
             const Text(
-              '🧠 AI Visual Flashcards',
+              'AI Visual Flashcards',
               style: TextStyle(
-                fontSize: 24,
-                fontWeight:
-                    FontWeight.bold,
+                fontSize: 25,
+                fontWeight: FontWeight.bold,
               ),
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
 
             const Text(
-              'Bilingual learning material '
-              'for mother-tongue education.',
+              'Class 2 • Counting 1-10 • Santali',
+              textAlign: TextAlign.center,
             ),
 
-            const SizedBox(height: 25),
+            const SizedBox(height: 20),
 
             SizedBox(
               width: double.infinity,
-              height: 55,
-
+              height: 52,
               child: ElevatedButton.icon(
-
                 onPressed:
-                    loading ? null : generate,
-
+                    loading ? null : generateFlashcards,
                 icon: loading
                     ? const SizedBox(
                         width: 20,
@@ -138,7 +126,6 @@ class _FlashcardScreenState
                     : const Icon(
                         Icons.auto_awesome,
                       ),
-
                 label: Text(
                   loading
                       ? 'GENERATING...'
@@ -147,12 +134,22 @@ class _FlashcardScreenState
               ),
             ),
 
-            const SizedBox(height: 25),
+            const SizedBox(height: 20),
 
             if (cards.isNotEmpty)
               Expanded(
-                child:
-                    _buildCard(),
+                child: _buildFlashcardArea(),
+              )
+            else
+              const Expanded(
+                child: Center(
+                  child: Text(
+                    'Generate flashcards to begin.',
+                    style: TextStyle(
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
               ),
           ],
         ),
@@ -160,105 +157,145 @@ class _FlashcardScreenState
     );
   }
 
+  Widget _buildFlashcardArea() {
+    final card = cards[currentIndex];
 
-  Widget _buildCard() {
+    final hindi =
+        card['label_hindi']?.toString() ??
+        card['hindi']?.toString() ??
+        '';
 
-    final card =
-        cards[currentCard];
+    final santali =
+        card['label_santali']?.toString() ??
+        card['target']?.toString() ??
+        '';
 
+    final visualType =
+        card['visual_type']?.toString() ?? 'object';
+
+    final object =
+        card['object']?.toString() ?? '';
 
     final count =
-        card['count'] as int;
-
+        card['count']?.toString() ?? '';
 
     return Column(
-
       children: [
-
         Text(
-          'Card ${currentCard + 1}'
-          ' / ${cards.length}',
+          'Card ${currentIndex + 1} / ${cards.length}',
           style: const TextStyle(
-            color: Colors.grey,
+            fontWeight: FontWeight.bold,
           ),
         ),
 
         const SizedBox(height: 12),
 
-
         Expanded(
+          child: GestureDetector(
+            onHorizontalDragEnd: (details) {
+              if (details.primaryVelocity == null) {
+                return;
+              }
 
-          child: Card(
-
-            elevation: 6,
-
-            shape:
-                RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.circular(
-                25,
-              ),
-            ),
-
-            child: Padding(
-
-              padding:
-                  const EdgeInsets.all(25),
-
-              child: Column(
-
-                mainAxisAlignment:
-                    MainAxisAlignment.center,
-
-                children: [
-
-                  Text(
-                    card['concept'],
-                    style:
-                        const TextStyle(
-                      fontSize: 22,
-                      fontWeight:
-                          FontWeight.bold,
+              if (details.primaryVelocity! < 0) {
+                nextCard();
+              } else {
+                previousCard();
+              }
+            },
+            child: Card(
+              elevation: 5,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment:
+                      MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _visualEmoji(object),
+                      style: const TextStyle(
+                        fontSize: 80,
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 30),
+                    const SizedBox(height: 20),
 
-                  _buildVisual(
-                    card['object'],
-                    count,
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  Text(
-                    card['label_hindi'],
-                    textAlign:
-                        TextAlign.center,
-                    style:
-                        const TextStyle(
-                      fontSize: 20,
+                    Text(
+                      count.isNotEmpty
+                          ? count
+                          : visualType,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey,
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
-                  const Divider(),
-
-                  const SizedBox(height: 12),
-
-                  Text(
-                    card['label_santali'],
-                    textAlign:
-                        TextAlign.center,
-                    style:
-                        const TextStyle(
-                      fontSize: 23,
-                      fontWeight:
-                          FontWeight.bold,
+                    Text(
+                      hindi,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 25,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ],
+
+                    const SizedBox(height: 15),
+
+                    const Divider(),
+
+                    const SizedBox(height: 15),
+
+                    Text(
+                      santali,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    const Text(
+                      'Santali • Ol Chiki',
+                      style: TextStyle(
+                        color: Colors.grey,
+                      ),
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    IconButton(
+                      iconSize: 42,
+                      icon: const Icon(
+                        Icons.volume_up,
+                      ),
+                      onPressed: () async {
+                        final available =
+                            await TtsService.speakSantali(
+                          santali,
+                        );
+
+                        if (!mounted) return;
+
+                        if (!available) {
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Native Santali TTS is not available on this device. '
+                                'Audio fallback used for prototype testing.',
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -267,117 +304,70 @@ class _FlashcardScreenState
         const SizedBox(height: 15),
 
         Row(
-
-          mainAxisAlignment:
-              MainAxisAlignment.spaceBetween,
-
           children: [
-
-            OutlinedButton.icon(
-
-              onPressed:
-                  currentCard > 0
-                      ? () {
-
-                          setState(() {
-                            currentCard--;
-                          });
-
-                        }
-                      : null,
-
-              icon: const Icon(
-                Icons.arrow_back,
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: previousCard,
+                icon: const Icon(
+                  Icons.arrow_back,
+                ),
+                label: const Text('Previous'),
               ),
-
-              label:
-                  const Text('Previous'),
             ),
 
+            const SizedBox(width: 12),
 
-            OutlinedButton.icon(
-
-              onPressed:
-                  currentCard <
-                          cards.length - 1
-                      ? () {
-
-                          setState(() {
-                            currentCard++;
-                          });
-
-                        }
-                      : null,
-
-              icon: const Icon(
-                Icons.arrow_forward,
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: nextCard,
+                icon: const Icon(
+                  Icons.arrow_forward,
+                ),
+                label: const Text('Next'),
               ),
-
-              label:
-                  const Text('Next'),
             ),
           ],
+        ),
+
+        const SizedBox(height: 10),
+
+        const Text(
+          'Swipe left or right to change cards',
+          style: TextStyle(
+            color: Colors.grey,
+          ),
         ),
       ],
     );
   }
 
+  String _visualEmoji(String object) {
+    final value = object.toLowerCase();
 
-  Widget _buildVisual(
-    String object,
-    int count,
-  ) {
-
-    String emoji = '●';
-
-
-    switch (object.toLowerCase()) {
-
-      case 'mango':
-      case 'mangoes':
-        emoji = '🥭';
-        break;
-
-      case 'leaf':
-      case 'leaves':
-        emoji = '🍃';
-        break;
-
-      case 'flower':
-      case 'flowers':
-        emoji = '🌸';
-        break;
-
-      case 'stone':
-      case 'stones':
-        emoji = '🪨';
-        break;
-
-      case 'pencil':
-      case 'pencils':
-        emoji = '✏️';
-        break;
+    if (value.contains('mango')) {
+      return '🥭';
     }
 
+    if (value.contains('leaf')) {
+      return '🍃';
+    }
 
-    return Wrap(
+    if (value.contains('flower')) {
+      return '🌸';
+    }
 
-      alignment:
-          WrapAlignment.center,
+    if (value.contains('stone')) {
+      return '🪨';
+    }
 
-      spacing: 10,
+    if (value.contains('grain')) {
+      return '🌾';
+    }
 
-      runSpacing: 10,
+    if (value.contains('apple')) {
+      return '🍎';
+    }
 
-      children: List.generate(
-        count,
-        (_) => Text(
-          emoji,
-          style: const TextStyle(
-            fontSize: 45,
-          ),
-        ),
-      ),
-    );
+    return '🔢';
   }
 }

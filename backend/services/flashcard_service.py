@@ -2,18 +2,9 @@ import os
 import json
 
 from dotenv import load_dotenv
-from google import genai
+from services.groq_service import generate_text
 
 load_dotenv()
-
-api_key = os.getenv("GEMINI_API_KEY")
-
-if not api_key:
-    raise RuntimeError("GEMINI_API_KEY is missing")
-
-client = genai.Client(api_key=api_key)
-
-MODEL = "gemini-2.5-flash"
 
 
 def generate_flashcards(
@@ -61,12 +52,10 @@ Rules:
 6. Do not use markdown.
 """
 
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=prompt,
-    )
-
-    text = response.text.strip()
+    text = generate_text(
+        prompt,
+        max_tokens=2000,
+    ).strip()
 
     if text.startswith("```"):
         text = text.replace("```json", "")
