@@ -3,8 +3,8 @@ uvicorn
 python-dotenv
 groq
 torch
-transformers
+transformers==4.51.3
+IndicTransToolkit==1.1.1
 sentencepiece
-sacremoses
-IndicTransToolkit
+sacrebleu
 reportlab
