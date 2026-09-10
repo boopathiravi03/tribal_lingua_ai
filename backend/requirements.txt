@@ -2,7 +2,8 @@ fastapi
 uvicorn
 python-dotenv
 groq
-torch
+--index-url https://download.pytorch.org/whl/cpu
+torch==2.5.1
 transformers==4.51.3
 IndicTransToolkit==1.1.1
 sentencepiece

@@ -1,3 +1,5 @@
+import os
+
 import torch
 
 from transformers import (
@@ -14,6 +16,8 @@ MODEL_NAME = (
 
 SRC_LANG = "hin_Deva"
 TGT_LANG = "sat_Olck"
+
+HF_TOKEN = os.getenv("HF_TOKEN")
 
 
 class IndicTransService:
@@ -35,6 +39,7 @@ class IndicTransService:
             self.tokenizer = (
                 AutoTokenizer.from_pretrained(
                     MODEL_NAME,
+                    token=HF_TOKEN,
                     trust_remote_code=True,
                 )
             )
@@ -42,6 +47,7 @@ class IndicTransService:
             self.model = (
                 AutoModelForSeq2SeqLM.from_pretrained(
                     MODEL_NAME,
+                    token=HF_TOKEN,
                     trust_remote_code=True,
                 )
             )
