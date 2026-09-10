@@ -2,14 +2,21 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-
 class ApiService {
-
   // Android emulator:
-  // 10.0.2.2 points to your computer's localhost.
+  // http://10.0.2.2:8000
+  //
+  // Physical Android phone:
+  // use your computer's LAN IP, for example:
+  // http://192.168.1.23:8000
+  //
+  // You can override this at run time using:
+  // flutter run --dart-define=API_BASE_URL=http://YOUR_PC_IP:8000
 
-  static const String baseUrl =
-      'http://10.0.2.2:8000';
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://10.0.2.2:8000',
+  );
 
 
   static Future<Map<String, dynamic>>
