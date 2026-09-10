@@ -1,144 +1,60 @@
-import os
-
-import torch
-
-from transformers import (
-    AutoModelForSeq2SeqLM,
-    AutoTokenizer,
-)
-
-from IndicTransToolkit import IndicProcessor
-
-
-MODEL_NAME = (
-    "ai4bharat/indictrans2-indic-indic-dist-320M"
-)
-
-SRC_LANG = "hin_Deva"
-TGT_LANG = "sat_Olck"
-
-HF_TOKEN = os.getenv("HF_TOKEN")
+from services.groq_service import generate_text
 
 
 class IndicTransService:
 
     def __init__(self):
-        self.available = False
+        self.available = True
 
-        print("Loading IndicTrans2...")
+        print("Translation engine: Groq AI")
+        print("Target language: Santali (Ol Chiki)")
 
-        self.device = (
-            "cuda"
-            if torch.cuda.is_available()
-            else "cpu"
-        )
+    def translate(self, text: str) -> str:
 
-        print(f"Device: {self.device}")
-
-        try:
-            self.tokenizer = (
-                AutoTokenizer.from_pretrained(
-                    MODEL_NAME,
-                    token=HF_TOKEN,
-                    trust_remote_code=True,
-                )
-            )
-
-            self.model = (
-                AutoModelForSeq2SeqLM.from_pretrained(
-                    MODEL_NAME,
-                    token=HF_TOKEN,
-                    trust_remote_code=True,
-                )
-            )
-
-            self.model.to(self.device)
-
-            self.model.eval()
-
-            self.processor = IndicProcessor(
-                inference=True
-            )
-
-            self.available = True
-
-            print(
-                "IndicTrans2 loaded successfully."
-            )
-
-        except Exception as e:
-            print(f"IndicTrans unavailable: {e}")
-            print("Continuing without IndicTrans...")
-            self.available = False
-
-    def translate(
-        self,
-        text: str,
-    ) -> str:
-
-        if not self.available:
-            return None
-
-        if not text.strip():
+        if not text or not text.strip():
             return ""
 
-        sentences = [text]
+        prompt = f"""
+Translate the following Hindi educational text into Santali.
 
-        batch = (
-            self.processor.preprocess_batch(
-                sentences,
-                src_lang=SRC_LANG,
-                tgt_lang=TGT_LANG,
-            )
-        )
+Target language:
+Santali (Ol Chiki script)
 
-        inputs = self.tokenizer(
-            batch,
-            return_tensors="pt",
-            padding=True,
-            truncation=True,
-            max_length=256,
-        )
+Important requirements:
+1. Output ONLY the Santali translation.
+2. Do not explain anything.
+3. Do not add quotation marks.
+4. Preserve numbers exactly.
+5. Preserve names and mathematical symbols.
+6. Use natural, simple Santali suitable for primary-school children.
+7. Prefer Ol Chiki script.
+8. Do not translate the meaning into another Indian language.
 
-        inputs = {
-            key: value.to(self.device)
-            for key, value in inputs.items()
-        }
+Hindi text:
+{text}
 
-        with torch.no_grad():
+Santali translation:
+"""
 
-            generated_tokens = (
-                self.model.generate(
-                    **inputs,
-                    use_cache=False,
-                    min_length=0,
-                    max_length=256,
-                    num_beams=5,
-                    num_return_sequences=1,
-                )
+        try:
+
+            result = generate_text(
+                prompt,
+                system_prompt=(
+                    "You are a multilingual Indian-language "
+                    "translation assistant specializing in "
+                    "Santali (Ol Chiki)."
+                ),
+                max_tokens=3000,
             )
 
-        generated_tokens = (
-            self.tokenizer.batch_decode(
-                generated_tokens,
-                skip_special_tokens=True,
-                clean_up_tokenization_spaces=True,
-            )
-        )
+            return result.strip()
 
-        translations = (
-            self.processor.postprocess_batch(
-                generated_tokens,
-                lang=TGT_LANG,
-            )
-        )
+        except Exception as e:
+            print(f"Translation error: {e}")
+            return text
 
-        return translations[0]
-
-    def translate_many(
-        self,
-        texts: list[str],
-    ) -> list[str]:
+    def translate_many(self, texts: list[str]) -> list[str]:
 
         results = []
 
