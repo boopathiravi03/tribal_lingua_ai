@@ -19,6 +19,7 @@ TGT_LANG = "sat_Olck"
 class IndicTransService:
 
     def __init__(self):
+        self.available = False
 
         print("Loading IndicTrans2...")
 
@@ -30,37 +31,47 @@ class IndicTransService:
 
         print(f"Device: {self.device}")
 
-        self.tokenizer = (
-            AutoTokenizer.from_pretrained(
-                MODEL_NAME,
-                trust_remote_code=True,
+        try:
+            self.tokenizer = (
+                AutoTokenizer.from_pretrained(
+                    MODEL_NAME,
+                    trust_remote_code=True,
+                )
             )
-        )
 
-        self.model = (
-            AutoModelForSeq2SeqLM.from_pretrained(
-                MODEL_NAME,
-                trust_remote_code=True,
+            self.model = (
+                AutoModelForSeq2SeqLM.from_pretrained(
+                    MODEL_NAME,
+                    trust_remote_code=True,
+                )
             )
-        )
 
-        self.model.to(self.device)
+            self.model.to(self.device)
 
-        self.model.eval()
+            self.model.eval()
 
-        self.processor = IndicProcessor(
-            inference=True
-        )
+            self.processor = IndicProcessor(
+                inference=True
+            )
 
-        print(
-            "IndicTrans2 loaded successfully."
-        )
+            self.available = True
 
+            print(
+                "IndicTrans2 loaded successfully."
+            )
+
+        except Exception as e:
+            print(f"IndicTrans unavailable: {e}")
+            print("Continuing without IndicTrans...")
+            self.available = False
 
     def translate(
         self,
         text: str,
     ) -> str:
+
+        if not self.available:
+            return None
 
         if not text.strip():
             return ""
@@ -117,7 +128,6 @@ class IndicTransService:
         )
 
         return translations[0]
-
 
     def translate_many(
         self,

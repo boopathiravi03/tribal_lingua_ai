@@ -74,9 +74,12 @@ def translate(request: TranslationRequest):
 
     try:
 
-        translated_text = indictrans.translate(
-            request.text
-        )
+        if indictrans.available:
+            translated_text = indictrans.translate(
+                request.text
+            )
+        else:
+            translated_text = request.text
 
         elapsed = time.perf_counter() - start_time
 
@@ -148,9 +151,12 @@ def create_lesson(request: LessonRequest):
             lesson["home_activity"],
         ]
 
-        translations = indictrans.translate_many(
-            texts
-        )
+        if indictrans.available:
+            translations = indictrans.translate_many(
+                texts
+            )
+        else:
+            translations = texts
 
         index = 0
 
@@ -276,9 +282,12 @@ def create_worksheet(request: WorksheetRequest):
             ],
         ]
 
-        translations = indictrans.translate_many(
-            hindi_texts
-        )
+        if indictrans.available:
+            translations = indictrans.translate_many(
+                hindi_texts
+            )
+        else:
+            translations = hindi_texts
 
         return {
             "success": True,
@@ -344,9 +353,12 @@ def create_flashcards(
             for card in cards
         ]
 
-        translations = (
-            indictrans.translate_many(texts)
-        )
+        if indictrans.available:
+            translations = (
+                indictrans.translate_many(texts)
+            )
+        else:
+            translations = texts
 
         bilingual_cards = []
 
