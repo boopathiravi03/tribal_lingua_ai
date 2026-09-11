@@ -450,9 +450,9 @@ class _BackendStatusCard extends StatelessWidget {
             : 'Backend unavailable';
 
     final description = checking
-        ? 'Connecting to Render FastAPI service'
+        ? 'Connecting to Local FastAPI service'
         : online
-            ? 'Render Cloud • FastAPI • Groq AI'
+            ? 'Local FastAPI • Groq AI'
             : 'Pull down to retry the connection';
 
     return Container(
@@ -647,9 +647,9 @@ class _ArchitectureCard extends StatelessWidget {
           ),
           _Line(),
           _ArchitectureRow(
-            icon: Icons.cloud_rounded,
-            title: 'FastAPI on Render',
-            subtitle: 'Cloud API and orchestration',
+            icon: Icons.computer_rounded,
+            title: 'FastAPI Local Backend',
+            subtitle: 'Local API and orchestration',
           ),
           _Line(),
           _ArchitectureRow(

@@ -14,7 +14,7 @@ class ApiService {
   //
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://tribal-lingua-ai.onrender.com',
+    defaultValue: 'http://127.0.0.1:8000',
   );
 
   static const Duration timeout = Duration(seconds: 120);
