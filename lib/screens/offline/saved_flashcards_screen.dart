@@ -262,95 +262,97 @@ class _SavedFlashcardsScreenState extends State<SavedFlashcardsScreen> {
                     width: 1.5,
                   ),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      _visualEmoji(word, visual),
-                      style: const TextStyle(fontSize: 72),
-                    ),
-
-                    const SizedBox(height: 14),
-
-                    Text(
-                      word.isNotEmpty ? word : 'Vocabulary Item',
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black54,
-                      ),
-                    ),
-
-                    const SizedBox(height: 6),
-
-                    if (hindi.isNotEmpty)
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
                       Text(
-                        hindi,
+                        _visualEmoji(word, visual),
+                        style: const TextStyle(fontSize: 72),
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      Text(
+                        word.isNotEmpty ? word : 'Vocabulary Item',
                         style: const TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF18302C),
+                          fontSize: 22,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black54,
                         ),
                       ),
 
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Divider(),
-                    ),
+                      const SizedBox(height: 6),
 
-                    Text(
-                      santali.isNotEmpty ? santali : 'ᱫᱟᱨᱮ',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF087F73),
-                      ),
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    const Text(
-                      'Ol Chiki Script',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.black45,
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    IconButton(
-                      iconSize: 42,
-                      icon: const Icon(
-                        Icons.volume_up_rounded,
-                        color: Color(0xFF087F73),
-                      ),
-                      onPressed: () async {
-                        await TtsService.speakSantali(santali);
-                      },
-                    ),
-
-                    if (sentence.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF4F8F6),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '"$sentence"',
-                          textAlign: TextAlign.center,
+                      if (hindi.isNotEmpty)
+                        Text(
+                          hindi,
                           style: const TextStyle(
-                            fontSize: 13,
-                            fontStyle: FontStyle.italic,
-                            color: Color(0xFF34504B),
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF18302C),
                           ),
                         ),
+
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Divider(),
                       ),
+
+                      Text(
+                        santali.isNotEmpty ? santali : 'ᱫᱟᱨᱮ',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF087F73),
+                        ),
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      const Text(
+                        'Ol Chiki Script',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.black45,
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      IconButton(
+                        iconSize: 42,
+                        icon: const Icon(
+                          Icons.volume_up_rounded,
+                          color: Color(0xFF087F73),
+                        ),
+                        onPressed: () async {
+                          await TtsService.speakSantali(santali);
+                        },
+                      ),
+
+                      if (sentence.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF4F8F6),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '"$sentence"',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontStyle: FontStyle.italic,
+                              color: Color(0xFF34504B),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
