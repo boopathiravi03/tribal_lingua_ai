@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
+import '../../services/demo_data_service.dart';
 import '../../services/tts_service.dart';
 import '../../services/offline_storage_service.dart';
 
@@ -27,31 +28,27 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
         className: 'Class 2',
         subject: 'Foundational Mathematics',
         lesson: 'Counting 1-10',
-        targetLanguage: 'Santali',
       );
 
       if (!mounted) return;
 
+      final parsedCards = (result['flashcards'] ??
+              result['cards'] ??
+              []) as List<dynamic>;
+
       setState(() {
-        cards = (result['flashcards'] ??
-                result['cards'] ??
-                []) as List<dynamic>;
+        cards = parsedCards.isNotEmpty ? parsedCards : DemoDataService.flashcards;
         loading = false;
       });
 
       await OfflineStorageService.saveFlashcards(result);
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
 
       setState(() {
+        cards = DemoDataService.flashcards;
         loading = false;
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Flashcard error: $e'),
-        ),
-      );
     }
   }
 

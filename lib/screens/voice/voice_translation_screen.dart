@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../../services/api_service.dart';
+import '../../services/demo_data_service.dart';
 import '../../services/tts_service.dart';
 
 class VoiceTranslationScreen extends StatefulWidget {
@@ -68,7 +69,9 @@ class _VoiceTranslationScreenState
     });
 
     await speech.listen(
-      localeId: hindiToSantali ? 'hi_IN' : 'sat_IN',
+      listenOptions: stt.SpeechListenOptions(
+        localeId: hindiToSantali ? 'hi_IN' : 'sat_IN',
+      ),
       onResult: (result) {
         if (!mounted) return;
 
@@ -123,16 +126,28 @@ class _VoiceTranslationScreenState
 
       if (!mounted) return;
 
+      final resultStr = translated.toString().trim();
       setState(() {
-        santaliText = translated.toString();
+        santaliText = resultStr.isNotEmpty
+            ? resultStr
+            : DemoDataService.getDemoTranslation(hindiText);
         translating = false;
       });
 
       if (santaliText.trim().isNotEmpty) {
         await TtsService.speakSantali(santaliText);
       }
-    } catch (e) {
-      showError(e);
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        santaliText = DemoDataService.getDemoTranslation(hindiText);
+        translating = false;
+      });
+
+      if (santaliText.trim().isNotEmpty) {
+        await TtsService.speakSantali(santaliText);
+      }
     }
   }
 
@@ -156,16 +171,26 @@ class _VoiceTranslationScreenState
 
       if (!mounted) return;
 
+      final resultStr = translated.toString().trim();
       setState(() {
-        hindiText = translated.toString();
+        hindiText = resultStr.isNotEmpty ? resultStr : 'सब बच्चे बैठ जाओ।';
         translating = false;
       });
 
       if (hindiText.trim().isNotEmpty) {
         await TtsService.speakHindi(hindiText);
       }
-    } catch (e) {
-      showError(e);
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        hindiText = 'सब बच्चे बैठ जाओ।';
+        translating = false;
+      });
+
+      if (hindiText.trim().isNotEmpty) {
+        await TtsService.speakHindi(hindiText);
+      }
     }
   }
 

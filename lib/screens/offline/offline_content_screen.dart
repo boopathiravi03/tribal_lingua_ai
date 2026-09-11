@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../services/demo_data_service.dart';
 import '../../services/offline_storage_service.dart';
 
 import 'saved_worksheet_screen.dart';
@@ -52,6 +53,48 @@ class _OfflineContentScreenState
           'Offline content cleared.',
         ),
       ),
+    );
+  }
+
+  void _showOfflineLessonsModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Saved Offline Lessons',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ...DemoDataService.offlineLessons.map(
+                (item) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.description_outlined),
+                  title: Text(item['title'] ?? ''),
+                  subtitle: Text('${item['grade']} • ${item['language']}'),
+                  trailing: Chip(
+                    label: Text(
+                      item['size'] ?? '',
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -108,6 +151,9 @@ class _OfflineContentScreenState
               Icons.menu_book,
               'Lessons',
               'Access saved classroom lessons',
+              onTap: () {
+                _showOfflineLessonsModal(context);
+              },
             ),
 
             _contentCard(

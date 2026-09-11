@@ -1,286 +1,620 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
-import '../services/voice_service.dart';
-import '../services/tts_service.dart';
+
 import 'screens/lesson/lesson_generator_screen.dart';
 import 'screens/worksheet/worksheet_screen.dart';
 import 'screens/flashcards/flashcard_screen.dart';
 import 'screens/classroom/classroom_mode_screen.dart';
 import 'screens/offline/offline_content_screen.dart';
+import 'screens/voice/voice_translation_screen.dart';
+import 'services/api_service.dart';
 
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await TtsService.initialize();
-
-  runApp(const TribalLinguaAI());
+  runApp(const TribalLinguaApp());
 }
 
-class TribalLinguaAI extends StatelessWidget {
-  const TribalLinguaAI({super.key});
+class TribalLinguaApp extends StatelessWidget {
+  const TribalLinguaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    const primaryGreen = Color(0xFF087F73);
+    const lightBackground = Color(0xFFF4F8F6);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Tribal Lingua AI',
       theme: ThemeData(
         useMaterial3: true,
-        fontFamily: 'Roboto',
+        scaffoldBackgroundColor: lightBackground,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2E7D32),
+          seedColor: primaryGreen,
+          brightness: Brightness.light,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: primaryGreen,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: false,
+        ),
+        cardTheme: const CardThemeData(
+          elevation: 0,
+          margin: EdgeInsets.zero,
+          surfaceTintColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(
+              Radius.circular(18),
+            ),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(
+              color: primaryGreen,
+              width: 1.5,
+            ),
+          ),
         ),
       ),
-      home: const TeacherSetupScreen(),
+      home: const DashboardScreen(),
     );
   }
 }
 
-class TeacherSetupScreen extends StatefulWidget {
-  const TeacherSetupScreen({super.key});
+// ============================================================
+// DASHBOARD
+// ============================================================
+
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
 
   @override
-  State<TeacherSetupScreen> createState() =>
-      _TeacherSetupScreenState();
+  State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _TeacherSetupScreenState
-    extends State<TeacherSetupScreen> {
+class _DashboardScreenState extends State<DashboardScreen> {
+  bool backendOnline = false;
+  bool checkingBackend = true;
 
-  String selectedLanguage = 'Santhali';
-  String selectedClass = 'Class 2';
-  String selectedSubject = 'Foundational Mathematics';
-  String selectedLesson = 'Counting 1–10';
+  @override
+  void initState() {
+    super.initState();
+    _checkBackend();
+  }
+
+  Future<void> _checkBackend() async {
+    setState(() {
+      checkingBackend = true;
+    });
+
+    final result = await ApiService.checkHealth();
+
+    if (!mounted) return;
+
+    setState(() {
+      backendOnline = result;
+      checkingBackend = false;
+    });
+  }
+
+  void _open(Widget screen) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => screen,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'TRIBAL LINGUA AI',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-      ),
-
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Teacher Dashboard',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              const Text(
-                'AI-powered vernacular education for tribal classrooms',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        border: Border.all(),
-                        borderRadius: BorderRadius.circular(14),
+      body: RefreshIndicator(
+        onRefresh: _checkBackend,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 275,
+              pinned: true,
+              backgroundColor: const Color(0xFF087F73),
+              foregroundColor: Colors.white,
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF075E54),
+                        Color(0xFF087F73),
+                        Color(0xFF159D8D),
+                      ],
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        22,
+                        65,
+                        22,
+                        20,
                       ),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.language),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'Teaching Language: $selectedLanguage',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: const Icon(
+                                  Icons.translate_rounded,
+                                  size: 30,
+                                  color: Colors.white,
+                                ),
                               ),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Text(
+                                  'TRIBAL LINGUA AI',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          const Text(
+                            'Every child learns\nin their mother tongue.',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 30,
+                              height: 1.12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'AI-powered vernacular pedagogy for foundational education.',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                              height: 1.4,
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
+                ),
+              ),
+              actions: [
+                IconButton(
+                  tooltip: 'Refresh backend',
+                  onPressed: _checkBackend,
+                  icon: const Icon(Icons.refresh),
+                ),
+              ],
+            ),
 
-                  const SizedBox(width: 12),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _BackendStatusCard(
+                      online: backendOnline,
+                      checking: checkingBackend,
+                    ),
 
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.circle,
-                          size: 10,
-                          color: Colors.green,
+                    const SizedBox(height: 12),
+
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF4D6),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: const Color(0xFFE6C96A),
                         ),
-                        SizedBox(width: 7),
-                        Text('Online'),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(
+                            Icons.science_rounded,
+                            color: Color(0xFF8A6800),
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Prototype Demo Mode • Sample classroom data enabled',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF6F5700),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 22),
+
+                    const Text(
+                      'Teacher Toolkit',
+                      style: TextStyle(
+                        fontSize: 23,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF18302C),
+                      ),
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    const Text(
+                      'AI tools for mother-tongue classroom teaching',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    _ToolCard(
+                      icon: Icons.record_voice_over_rounded,
+                      title: 'Live Voice Translation',
+                      subtitle: 'Hindi ↔ Santali voice assistant',
+                      badge: 'LIVE',
+                      onTap: () {
+                        _open(const VoiceTranslationScreen());
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    _ToolCard(
+                      icon: Icons.auto_stories_rounded,
+                      title: 'AI Lesson Generator',
+                      subtitle: 'Generate bilingual FLN lesson content',
+                      onTap: () {
+                        _open(const LessonGeneratorScreen());
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    _ToolCard(
+                      icon: Icons.assignment_rounded,
+                      title: 'Worksheet Generator',
+                      subtitle: 'Create NIPUN-aligned bilingual worksheets',
+                      onTap: () {
+                        _open(const WorksheetScreen());
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    _ToolCard(
+                      icon: Icons.style_rounded,
+                      title: 'Visual Flashcards',
+                      subtitle: 'AI-generated vocabulary and learning cards',
+                      onTap: () {
+                        _open(const FlashcardScreen());
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    _ToolCard(
+                      icon: Icons.groups_rounded,
+                      title: 'Classroom Mode',
+                      subtitle: 'Teacher ↔ student real-time interaction',
+                      onTap: () {
+                        _open(const ClassroomModeScreen());
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    _ToolCard(
+                      icon: Icons.cloud_download_rounded,
+                      title: 'Offline Learning',
+                      subtitle: 'Saved lessons for low-connectivity areas',
+                      onTap: () {
+                        _open(const OfflineContentScreen());
+                      },
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    const Text(
+                      'Prototype Architecture',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF18302C),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    _ArchitectureCard(),
+
+                    const SizedBox(height: 24),
+
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE4F3EF),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.flag_rounded,
+                                color: Color(0xFF087F73),
+                              ),
+                              SizedBox(width: 10),
+                              Text(
+                                'SIH Prototype',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF075E54),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            'Hindi → Santali translation • AI pedagogy • '
+                            'voice interaction • worksheets • flashcards • '
+                            'offline learning',
+                            style: TextStyle(
+                              height: 1.5,
+                              color: Color(0xFF34504B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 35),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// BACKEND STATUS
+// ============================================================
+
+class _BackendStatusCard extends StatelessWidget {
+  final bool online;
+  final bool checking;
+
+  const _BackendStatusCard({
+    required this.online,
+    required this.checking,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = checking
+        ? Colors.orange
+        : online
+            ? Colors.green
+            : Colors.red;
+
+    final statusText = checking
+        ? 'Checking AI backend...'
+        : online
+            ? 'AI backend connected'
+            : 'Backend unavailable';
+
+    final description = checking
+        ? 'Connecting to Render FastAPI service'
+        : online
+            ? 'Render Cloud • FastAPI • Groq AI'
+            : 'Pull down to retry the connection';
+
+    return Container(
+      padding: const EdgeInsets.all(17),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: statusColor.withValues(alpha: 0.25),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 13,
+            height: 13,
+            decoration: BoxDecoration(
+              color: statusColor,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  statusText,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (online)
+            const Icon(
+              Icons.cloud_done_rounded,
+              color: Colors.green,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================
+// TOOL CARD
+// ============================================================
+
+class _ToolCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String? badge;
+  final VoidCallback onTap;
+
+  const _ToolCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.badge,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.all(17),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: Colors.black.withValues(alpha: 0.06),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE4F3EF),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  icon,
+                  color: const Color(0xFF087F73),
+                  size: 28,
+                ),
+              ),
+
+              const SizedBox(width: 15),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        if (badge != null) ...[
+                          const SizedBox(width: 7),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFE7A3),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              badge!,
+                              style: const TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 25),
-
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.15,
-                children: [
-                  _featureCard(
-                    context,
-                    icon: Icons.menu_book,
-                    title: 'AI Lesson',
-                    subtitle: 'Generate bilingual lessons',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              const LessonGeneratorScreen(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  _featureCard(
-                    context,
-                    icon: Icons.assignment,
-                    title: 'Worksheet',
-                    subtitle: 'Generate bilingual worksheets',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              const WorksheetScreen(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  _featureCard(
-                    context,
-                    icon: Icons.style,
-                    title: 'Flashcards',
-                    subtitle: 'Create learning flashcards',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              const FlashcardScreen(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  _featureCard(
-                    context,
-                    icon: Icons.record_voice_over,
-                    title: 'Classroom Mode',
-                    subtitle: 'Hindi ↔ Santali voice',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              const ClassroomModeScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 18),
-
-              Card(
-                child: ListTile(
-                  leading: const Icon(
-                    Icons.offline_bolt,
-                    size: 32,
-                  ),
-                  title: const Text(
-                    'Offline Learning',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  subtitle: const Text(
-                    'Access synchronized content without internet',
-                  ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios,
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            const OfflineContentScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-              const SizedBox(height: 15),
-
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(15),
-
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  color: Colors.green.withValues(alpha: 0.08),
-                ),
-
-                child: const Row(
-                  children: [
-                    Icon(
-                      Icons.cloud_off,
-                      color: Colors.green,
-                    ),
-
-                    SizedBox(width: 10),
-
-                    Expanded(
-                      child: Text(
-                        'Offline-ready lesson content',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
+                    const SizedBox(height: 5),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black54,
+                        height: 1.35,
                       ),
                     ),
                   ],
                 ),
+              ),
+
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: Colors.black38,
               ),
             ],
           ),
@@ -288,587 +622,119 @@ class _TeacherSetupScreenState
       ),
     );
   }
-
-  Widget _featureCard(
-     BuildContext context, {
-     required IconData icon,
-     required String title,
-     required String subtitle,
-     required VoidCallback onTap,
-   }) {
-     return Card(
-       elevation: 2,
-       child: InkWell(
-         borderRadius: BorderRadius.circular(16),
-         onTap: onTap,
-         child: Padding(
-           padding: const EdgeInsets.all(16),
-           child: Column(
-             mainAxisAlignment: MainAxisAlignment.center,
-             children: [
-               Icon(
-                 icon,
-                 size: 38,
-               ),
-
-               const SizedBox(height: 10),
-
-               Text(
-                 title,
-                 textAlign: TextAlign.center,
-                 style: const TextStyle(
-                   fontSize: 17,
-                   fontWeight: FontWeight.bold,
-                 ),
-               ),
-
-               const SizedBox(height: 5),
-
-               Text(
-                 subtitle,
-                 textAlign: TextAlign.center,
-                 style: const TextStyle(
-                   fontSize: 12,
-                 ),
-               ),
-             ],
-           ),
-         ),
-       ),
-     );
-   }
 }
 
-class ClassroomScreen extends StatefulWidget {
+// ============================================================
+// ARCHITECTURE CARD
+// ============================================================
 
-  final String language;
-  final String lesson;
-  final String className;
-  final String subject;
+class _ArchitectureCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        children: [
+          _ArchitectureRow(
+            icon: Icons.phone_android_rounded,
+            title: 'Flutter Android App',
+            subtitle: 'Teacher / classroom interface',
+          ),
+          _Line(),
+          _ArchitectureRow(
+            icon: Icons.cloud_rounded,
+            title: 'FastAPI on Render',
+            subtitle: 'Cloud API and orchestration',
+          ),
+          _Line(),
+          _ArchitectureRow(
+            icon: Icons.psychology_rounded,
+            title: 'Groq AI',
+            subtitle: 'Translation + pedagogy generation',
+          ),
+          _Line(),
+          _ArchitectureRow(
+            icon: Icons.language_rounded,
+            title: 'Hindi ↔ Santali',
+            subtitle: 'Vernacular primary education',
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-  const ClassroomScreen({
-    super.key,
-    required this.language,
-    required this.lesson,
-    required this.className,
-    required this.subject,
+class _ArchitectureRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _ArchitectureRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
   });
 
   @override
-  State<ClassroomScreen> createState() =>
-      _ClassroomScreenState();
-}
-
-
-class _ClassroomScreenState
-    extends State<ClassroomScreen> {
-
-  final TextEditingController controller =
-      TextEditingController(
-    text: 'बच्चों, इन आमों को गिनो। कितने आम हैं?',
-  );
-
-  final VoiceService voiceService =
-      VoiceService();
-
-  String translatedText = '';
-
-  bool loading = false;
-
-  int latency = 0;
-
-  bool listening = false;
-
-  String recognizedText = '';
-
-
-  Future<void> translate() async {
-
-    if (controller.text.trim().isEmpty) {
-      return;
-    }
-
-
-    setState(() {
-      loading = true;
-      translatedText = '';
-      latency = 0;
-    });
-
-
-    try {
-
-      final result =
-          await ApiService.translate(
-        text: controller.text.trim(),
-        targetLanguage: widget.language,
-        className: widget.className,
-        subject: widget.subject,
-        lesson: widget.lesson,
-      );
-
-
-      setState(() {
-
-        translatedText =
-            result['translated_text'] ?? '';
-
-        latency =
-            result['latency_ms'] ?? 0;
-
-        loading = false;
-      });
-
-    } catch (e) {
-
-      setState(() {
-        loading = false;
-      });
-
-
-      if (!mounted) return;
-
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        SnackBar(
-          content: Text(
-            'Translation error: $e',
-          ),
-        ),
-      );
-    }
-  }
-
-
-  Future<void> startVoiceTranslation() async {
-
-    try {
-
-      setState(() {
-        listening = true;
-        recognizedText = '';
-        translatedText = '';
-        latency = 0;
-      });
-
-      await voiceService.startListening(
-
-        onListening: () {
-          setState(() {
-            listening = true;
-          });
-        },
-
-        onResult: (text) {
-          setState(() {
-            recognizedText = text;
-          });
-        },
-
-        onStopped: () async {
-          setState(() {
-            listening = false;
-          });
-
-          if (recognizedText.trim().isNotEmpty) {
-            await translateRecognizedSpeech();
-          }
-        },
-      );
-
-    } catch (e) {
-
-      setState(() {
-        listening = false;
-      });
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        SnackBar(
-          content: Text(
-            'Microphone error: $e',
-          ),
-        ),
-      );
-    }
-  }
-
-
-  Future<void> translateRecognizedSpeech() async {
-
-    if (recognizedText.trim().isEmpty) {
-      return;
-    }
-
-    setState(() {
-      loading = true;
-    });
-
-    final stopwatch = Stopwatch()..start();
-
-    try {
-
-      final result =
-          await ApiService.translate(
-        text: recognizedText,
-        targetLanguage: widget.language,
-        className: widget.className,
-        subject: widget.subject,
-        lesson: widget.lesson,
-      );
-
-      final aiText =
-          result['translated_text'] ?? '';
-
-      stopwatch.stop();
-
-      setState(() {
-
-        translatedText = aiText;
-
-        latency =
-            stopwatch.elapsedMilliseconds;
-
-        loading = false;
-      });
-
-    } catch (e) {
-
-      setState(() {
-        loading = false;
-      });
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        SnackBar(
-          content: Text(
-            'Translation error: $e',
-          ),
-        ),
-      );
-    }
-  }
-
-
-  @override
   Widget build(BuildContext context) {
-
-    return Scaffold(
-
-      appBar: AppBar(
-        title: const Text(
-          'Classroom Assistant',
+    return Row(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: const Color(0xFFE4F3EF),
+            borderRadius: BorderRadius.circular(13),
+          ),
+          child: Icon(
+            icon,
+            color: const Color(0xFF087F73),
+          ),
         ),
-      ),
-
-
-      body: SafeArea(
-
-        child: SingleChildScrollView(
-
-          padding: const EdgeInsets.all(20),
-
+        const SizedBox(width: 13),
+        Expanded(
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
-
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               Text(
-                '${widget.className} • '
-                '${widget.lesson}',
+                title,
                 style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-
-
-              const SizedBox(height: 5),
-
-
+              const SizedBox(height: 3),
               Text(
-                '${widget.subject} • '
-                '${widget.language}',
+                subtitle,
                 style: const TextStyle(
-                  color: Colors.grey,
-                ),
-              ),
-
-
-              const SizedBox(height: 25),
-
-
-              const Text(
-                '👩‍🏫 Teacher — Hindi',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-
-              const SizedBox(height: 10),
-
-
-              TextField(
-                controller: controller,
-
-                maxLines: 3,
-
-                decoration: InputDecoration(
-                  hintText:
-                      'Enter teacher sentence',
-
-                  border: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(15),
-                  ),
-                ),
-              ),
-
-
-              const SizedBox(height: 15),
-
-
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-
-                child: ElevatedButton.icon(
-
-                  onPressed:
-                      loading ? null : translate,
-
-                  icon: loading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child:
-                              CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Icon(
-                          Icons.translate,
-                        ),
-
-                  label: Text(
-                    loading
-                        ? 'TRANSLATING...'
-                        : 'TRANSLATE TO '
-                          '${widget.language.toUpperCase()}',
-                  ),
-                ),
-              ),
-
-
-              const SizedBox(height: 25),
-
-
-              SizedBox(
-                width: double.infinity,
-                height: 70,
-
-                child: ElevatedButton.icon(
-
-                  onPressed: listening
-                      ? () async {
-                          await voiceService
-                              .stopListening();
-                        }
-                      : startVoiceTranslation,
-
-                  icon: Icon(
-                    listening
-                        ? Icons.stop
-                        : Icons.mic,
-                    size: 30,
-                  ),
-
-                  label: Text(
-                    listening
-                        ? 'STOP LISTENING'
-                        : 'SPEAK IN HINDI',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-
-
-              if (recognizedText.isNotEmpty) ...[
-
-                const SizedBox(height: 20),
-
-                Container(
-                  width: double.infinity,
-
-                  padding:
-                      const EdgeInsets.all(18),
-
-                  decoration: BoxDecoration(
-                    borderRadius:
-                        BorderRadius.circular(16),
-
-                    color: Colors.orange
-                        .withValues(alpha: 0.08),
-                  ),
-
-
-                  child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
-
-                    children: [
-
-                      const Text(
-                        '🎤 Recognized Hindi',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      Text(
-                        recognizedText,
-                        style: const TextStyle(
-                          fontSize: 18,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-
-
-              const SizedBox(height: 25),
-
-
-              Container(
-
-                width: double.infinity,
-
-                padding:
-                    const EdgeInsets.all(20),
-
-                decoration: BoxDecoration(
-                  borderRadius:
-                      BorderRadius.circular(18),
-
-                  color: Colors.green
-                      .withValues(alpha: 0.08),
-                ),
-
-
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-
-                  children: [
-
-                    Text(
-                      '🗣 ${widget.language}',
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
-                    ),
-
-
-                    const SizedBox(height: 15),
-
-
-                    Text(
-                      translatedText.isEmpty
-                          ? 'Translation will appear here...'
-                          : translatedText,
-
-                      style: const TextStyle(
-                        fontSize: 20,
-                      ),
-                    ),
-
-
-                    if (translatedText.isNotEmpty) ...[
-
-                      const SizedBox(height: 15),
-
-                      SizedBox(
-                        width: double.infinity,
-
-                        child: OutlinedButton.icon(
-
-                          onPressed: () async {
-
-                            try {
-
-                              await TtsService.speakSantali(
-                                translatedText,
-                              );
-
-                            } catch (e) {
-
-                              if (!mounted) return;
-
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Santhali TTS is not available '
-                                    'on this device: $e',
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-
-                          icon: const Icon(
-                            Icons.volume_up,
-                          ),
-
-                          label: const Text(
-                            'PLAY TRIBAL AUDIO',
-                          ),
-                        ),
-                      ),
-                    ],
-
-
-                    if (latency > 0) ...[
-
-                      const SizedBox(height: 15),
-
-                      Text(
-                        '⚡ AI latency: '
-                        '${(latency / 1000).toStringAsFixed(2)} s',
-
-                        style: TextStyle(
-                          color: latency <= 3000
-                              ? Colors.green
-                              : Colors.red,
-
-                          fontWeight:
-                              FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ],
+                  fontSize: 12,
+                  color: Colors.black54,
                 ),
               ),
             ],
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _Line extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(
+        left: 21,
+        top: 6,
+        bottom: 6,
       ),
+      width: 1,
+      height: 22,
+      color: Colors.black12,
     );
   }
 }

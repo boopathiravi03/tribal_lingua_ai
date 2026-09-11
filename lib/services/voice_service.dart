@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 class VoiceService {
@@ -8,10 +9,10 @@ class VoiceService {
   Future<bool> initialize() async {
     return await _speech.initialize(
       onStatus: (status) {
-        print('Speech status: $status');
+        debugPrint('Speech status: $status');
       },
       onError: (error) {
-        print('Speech error: $error');
+        debugPrint('Speech error: $error');
       },
     );
   }

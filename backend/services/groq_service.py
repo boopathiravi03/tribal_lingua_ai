@@ -1,50 +1,75 @@
 import os
+from typing import Optional
+
 from dotenv import load_dotenv
 from groq import Groq
 
 load_dotenv()
 
+
+# ============================================================
+# GROQ CONFIGURATION
+# ============================================================
+
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_MODEL = os.getenv(
+
+MODEL = os.getenv(
     "GROQ_MODEL",
-    "openai/gpt-oss-20b"
+    "openai/gpt-oss-20b",
 )
+
 
 if not GROQ_API_KEY:
-    raise RuntimeError(
-        "GROQ_API_KEY is missing from .env"
+    print("WARNING: GROQ_API_KEY is not configured.")
+
+client: Optional[Groq] = None
+
+if GROQ_API_KEY:
+    client = Groq(
+        api_key=GROQ_API_KEY,
     )
 
-client = Groq(
-    api_key=GROQ_API_KEY
-)
 
+# ============================================================
+# GENERATE TEXT
+# ============================================================
 
 def generate_text(
     prompt: str,
-    system_prompt: str = "",
-    max_tokens: int = 2000,
+    model: str = MODEL,
+    temperature: float = 0.3,
+    max_tokens: int = 1500,
 ) -> str:
 
-    messages = []
-
-    if system_prompt:
-        messages.append({
-            "role": "system",
-            "content": system_prompt,
-        })
-
-    messages.append({
-        "role": "user",
-        "content": prompt,
-    })
+    if client is None:
+        raise RuntimeError(
+            "GROQ_API_KEY is missing. "
+            "Add GROQ_API_KEY to the backend environment variables."
+        )
 
     response = client.chat.completions.create(
-        model=GROQ_MODEL,
-        messages=messages,
-        temperature=0.2,
+        model=model,
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are an AI assistant for Tribal Lingua AI, "
+                    "an educational application for primary-school "
+                    "children learning through their mother tongue."
+                ),
+            },
+            {
+                "role": "user",
+                "content": prompt,
+            },
+        ],
+        temperature=temperature,
         max_tokens=max_tokens,
-        reasoning_effort="low",
     )
 
-    return response.choices[0].message.content.strip()
+    content = response.choices[0].message.content
+
+    if not content:
+        raise RuntimeError("Groq returned an empty response.")
+
+    return content.strip()

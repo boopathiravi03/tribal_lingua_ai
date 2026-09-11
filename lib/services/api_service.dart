@@ -1,217 +1,194 @@
 import 'dart:convert';
-
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  // Android emulator:
-  // http://10.0.2.2:8000
+  // ============================================================
+  // BACKEND CONFIGURATION
+  // ============================================================
   //
-  // Physical Android phone:
-  // use your computer's LAN IP, for example:
-  // http://192.168.1.23:8000
+  // Render is the primary backend.
   //
-  // You can override this at run time using:
-  // flutter run --dart-define=API_BASE_URL=http://YOUR_PC_IP:8000
-
+  // For local laptop testing:
+  //
+  // flutter run --dart-define=API_BASE_URL=http://192.168.1.23:8000
+  //
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'https://tribal-lingua-ai.onrender.com',
   );
 
+  static const Duration timeout = Duration(seconds: 120);
 
-  static Future<Map<String, dynamic>>
-      translate({
-    required String text,
-    required String targetLanguage,
-    required String className,
-    required String subject,
-    required String lesson,
-  }) async {
+  // ============================================================
+  // COMMON POST METHOD
+  // ============================================================
 
-    final response = await http.post(
-      Uri.parse('$baseUrl/translate'),
+  static Future<Map<String, dynamic>> _post(
+    String endpoint,
+    Map<String, dynamic> body,
+  ) async {
+    final uri = Uri.parse('$baseUrl$endpoint');
 
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    try {
+      final response = await http
+          .post(
+            uri,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(timeout);
 
-      body: jsonEncode({
-        'text': text,
-        'source_language': 'Hindi',
-        'target_language': targetLanguage,
-        'class_name': className,
-        'subject': subject,
-        'lesson': lesson,
-      }),
-    );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (response.body.isEmpty) {
+          return {};
+        }
 
+        final decoded = jsonDecode(response.body);
 
-    if (response.statusCode != 200) {
-      throw Exception(
-        'Translation failed: ${response.body}',
-      );
+        if (decoded is Map<String, dynamic>) {
+          return decoded;
+        }
+
+        return {
+          'data': decoded,
+        };
+      }
+
+      String message = 'Server error ${response.statusCode}';
+
+      try {
+        final errorBody = jsonDecode(response.body);
+
+        if (errorBody is Map && errorBody['detail'] != null) {
+          message = errorBody['detail'].toString();
+        }
+      } catch (_) {}
+
+      throw Exception(message);
+    } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      }
+
+      throw Exception('Unable to connect to backend: $e');
     }
-
-
-    return jsonDecode(response.body);
   }
 
+  // ============================================================
+  // HEALTH CHECK
+  // ============================================================
 
-  static Future<Map<String, dynamic>>
-      translateText({
+  static Future<bool> checkHealth() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/health'),
+            headers: {
+              'Accept': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 20));
+
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ============================================================
+  // HINDI ↔ SANTALI TRANSLATION
+  // ============================================================
+
+  static Future<Map<String, dynamic>> translate({
     required String text,
-    required String sourceLanguage,
-    required String targetLanguage,
+    String sourceLanguage = 'hi',
+    String targetLanguage = 'sat',
   }) async {
-
-    final response = await http.post(
-      Uri.parse('$baseUrl/translate'),
-
-      headers: {
-        'Content-Type': 'application/json',
-      },
-
-      body: jsonEncode({
+    return _post(
+      '/translate',
+      {
         'text': text,
         'source_language': sourceLanguage,
         'target_language': targetLanguage,
-      }),
+      },
     );
-
-
-    if (response.statusCode != 200) {
-      throw Exception(
-        'Translation failed: ${response.body}',
-      );
-    }
-
-
-    return jsonDecode(response.body);
   }
 
+  static Future<Map<String, dynamic>> translateText({
+    required String text,
+    String sourceLanguage = 'hi',
+    String targetLanguage = 'sat',
+  }) async {
+    return translate(
+      text: text,
+      sourceLanguage: sourceLanguage,
+      targetLanguage: targetLanguage,
+    );
+  }
 
-  static Future<Map<String, dynamic>>
-      generateLesson({
+  // ============================================================
+  // AI LESSON GENERATOR
+  // ============================================================
+
+  static Future<Map<String, dynamic>> generateLesson({
     required String className,
     required String subject,
     required String lesson,
-    required String targetLanguage,
+    String targetLanguage = 'Santali',
   }) async {
-
-    final response = await http.post(
-      Uri.parse(
-        '$baseUrl/lesson/generate',
-      ),
-
-      headers: {
-        'Content-Type': 'application/json',
-      },
-
-      body: jsonEncode({
+    return _post(
+      '/lesson/generate',
+      {
         'class_name': className,
         'subject': subject,
         'lesson': lesson,
         'target_language': targetLanguage,
-      }),
-    );
-
-
-    if (response.statusCode != 200) {
-      throw Exception(
-        'Lesson generation failed: '
-        '${response.body}',
-      );
-    }
-
-
-    return jsonDecode(
-      response.body,
+      },
     );
   }
 
+  // ============================================================
+  // WORKSHEET GENERATOR
+  // ============================================================
 
-  static Future<Map<String, dynamic>>
-      generateWorksheet({
+  static Future<Map<String, dynamic>> generateWorksheet({
     required String className,
     required String subject,
     required String lesson,
-    required String targetLanguage,
-    String grade = 'Grade 1',
-    String learningOutcome =
-        'Recognises and counts numbers',
+    required String grade,
+    required String learningOutcome,
   }) async {
-
-    final response = await http.post(
-      Uri.parse(
-        '$baseUrl/worksheet/generate',
-      ),
-
-      headers: {
-        'Content-Type': 'application/json',
-      },
-
-      body: jsonEncode({
+    return _post(
+      '/worksheet/generate',
+      {
         'class_name': className,
         'subject': subject,
         'lesson': lesson,
-        'target_language': targetLanguage,
         'grade': grade,
         'learning_outcome': learningOutcome,
-      }),
-    );
-
-
-    if (response.statusCode != 200) {
-      throw Exception(
-        'Worksheet generation failed: '
-        '${response.body}',
-      );
-    }
-
-
-    return jsonDecode(
-      response.body,
+      },
     );
   }
 
+  // ============================================================
+  // FLASHCARD GENERATOR
+  // ============================================================
 
-  static Future<Map<String, dynamic>>
-      generateFlashcards({
+  static Future<Map<String, dynamic>> generateFlashcards({
     required String className,
     required String subject,
     required String lesson,
-    required String targetLanguage,
   }) async {
-
-    final response = await http.post(
-      Uri.parse(
-        '$baseUrl/flashcards/generate',
-      ),
-
-      headers: {
-        'Content-Type': 'application/json',
-      },
-
-      body: jsonEncode({
+    return _post(
+      '/flashcards/generate',
+      {
         'class_name': className,
         'subject': subject,
         'lesson': lesson,
-        'target_language':
-            targetLanguage,
-      }),
-    );
-
-
-    if (response.statusCode != 200) {
-      throw Exception(
-        'Flashcard generation failed: '
-        '${response.body}',
-      );
-    }
-
-
-    return jsonDecode(
-      response.body,
+      },
     );
   }
 }

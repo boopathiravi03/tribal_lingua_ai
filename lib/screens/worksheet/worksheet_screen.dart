@@ -37,7 +37,6 @@ class _WorksheetScreenState extends State<WorksheetScreen> {
         className: 'Class 2',
         subject: selectedSubject,
         lesson: 'Counting 1-10',
-        targetLanguage: 'Santali',
         grade: selectedGrade,
         learningOutcome: selectedOutcome,
       );
@@ -104,7 +103,7 @@ class _WorksheetScreenState extends State<WorksheetScreen> {
             const SizedBox(height: 25),
 
             DropdownButtonFormField<String>(
-              value: selectedGrade,
+              initialValue: selectedGrade,
               decoration: const InputDecoration(
                 labelText: 'Grade',
                 border: OutlineInputBorder(),
@@ -135,7 +134,7 @@ class _WorksheetScreenState extends State<WorksheetScreen> {
             const SizedBox(height: 15),
 
             DropdownButtonFormField<String>(
-              value: selectedSubject,
+              initialValue: selectedSubject,
               decoration: const InputDecoration(
                 labelText: 'Subject',
                 border: OutlineInputBorder(),
@@ -166,7 +165,7 @@ class _WorksheetScreenState extends State<WorksheetScreen> {
             const SizedBox(height: 15),
 
             DropdownButtonFormField<String>(
-              value: selectedOutcome,
+              initialValue: selectedOutcome,
               decoration: const InputDecoration(
                 labelText: 'Learning Outcome',
                 border: OutlineInputBorder(),

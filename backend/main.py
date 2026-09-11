@@ -1,55 +1,82 @@
 import time
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 
+from services.groq_service import generate_text
 from services.indictrans_service import IndicTransService
-from services.lesson_service import generate_lesson
-from services.worksheet_service import generate_worksheet
-from services.flashcard_service import generate_flashcards
 
+
+# ============================================================
+# APP
+# ============================================================
 
 app = FastAPI(
     title="Tribal Lingua AI",
+    description=(
+        "AI-powered vernacular pedagogy and real-time "
+        "translation platform for mother-tongue primary education."
+    ),
     version="1.0.0",
 )
 
 
-indictrans = IndicTransService()
+# ============================================================
+# CORS
+# ============================================================
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
-class TranslationRequest(BaseModel):
-    text: str
-    source_language: str = "Hindi"
-    target_language: str = "Santhali"
+# ============================================================
+# SERVICES
+# ============================================================
 
-    class_name: str = "Class 2"
-    subject: str = "Foundational Mathematics"
-    lesson: str = "Counting 1–10"
+translation_service = IndicTransService()
+
+
+# ============================================================
+# MODELS
+# ============================================================
+
+class TranslateRequest(BaseModel):
+    text: str = Field(..., min_length=1)
+    source_language: str = "hi"
+    target_language: str = "sat"
 
 
 class LessonRequest(BaseModel):
-    class_name: str
-    subject: str
-    lesson: str
+    class_name: str = "Grade 1"
+    subject: str = "Foundational Literacy"
+    lesson: str = "Basic classroom lesson"
     target_language: str = "Santali"
 
 
 class WorksheetRequest(BaseModel):
-    class_name: str
-    subject: str
-    lesson: str
-    target_language: str = "Santali"
+    class_name: str = "Grade 1"
+    subject: str = "Foundational Literacy"
+    lesson: str = "Basic lesson"
     grade: str = "Grade 1"
-    learning_outcome: str = "Recognises and counts numbers"
+    learning_outcome: str = "Recognize and understand basic words"
 
 
 class FlashcardRequest(BaseModel):
-    class_name: str
-    subject: str
-    lesson: str
-    target_language: str = "Santali"
+    class_name: str = "Grade 1"
+    subject: str = "Foundational Literacy"
+    lesson: str = "Basic vocabulary"
 
+
+# ============================================================
+# ROOT
+# ============================================================
 
 @app.get("/")
 def root():
@@ -57,354 +84,310 @@ def root():
         "app": "Tribal Lingua AI",
         "status": "running",
         "version": "1.0.0",
+        "translation_engine": "Groq AI",
+        "target_language": "Santali",
     }
 
+
+# ============================================================
+# HEALTH
+# ============================================================
 
 @app.get("/health")
 def health():
     return {
         "status": "healthy",
+        "service": "tribal-lingua-ai",
+        "translation_engine": "Groq AI",
     }
 
 
+# ============================================================
+# TRANSLATION
+# ============================================================
+
 @app.post("/translate")
-def translate(request: TranslationRequest):
+def translate(request: TranslateRequest):
 
     start_time = time.perf_counter()
 
     try:
 
-        if indictrans.available:
-            translated_text = indictrans.translate(
-                request.text
-            )
-        else:
-            translated_text = request.text
-
-        elapsed = time.perf_counter() - start_time
-
-        return {
-            "success": True,
-
-            "source_text": request.text,
-
-            "source_language":
-                request.source_language,
-
-            "target_language":
-                request.target_language,
-
-            "translated_text":
-                translated_text,
-
-            "translation_engine":
-                "IndicTrans2",
-
-            "source_code":
-                "hin_Deva",
-
-            "target_code":
-                "sat_Olck",
-
-            "latency_ms":
-                round(elapsed * 1000),
-
-            "context": {
-                "class":
-                    request.class_name,
-
-                "subject":
-                    request.subject,
-
-                "lesson":
-                    request.lesson,
-            },
-        }
-
-    except Exception as e:
-
-        raise HTTPException(
-            status_code=500,
-            detail=str(e),
-        )
-
-
-@app.post("/lesson/generate")
-def create_lesson(request: LessonRequest):
-
-    try:
-
-        lesson = generate_lesson(
-            class_name=request.class_name,
-            subject=request.subject,
-            lesson=request.lesson,
+        translated_text = translation_service.translate(
+            text=request.text,
+            source_language=request.source_language,
             target_language=request.target_language,
         )
 
-        activity = lesson["activity"]
-
-        texts = [
-            lesson["learning_objective"],
-            lesson["teacher_script_hindi"],
-            activity["instructions_hindi"],
-            *lesson["assessment"],
-            lesson["home_activity"],
-        ]
-
-        if indictrans.available:
-            translations = indictrans.translate_many(
-                texts
-            )
-        else:
-            translations = texts
-
-        index = 0
-
-        learning_objective_target = translations[index]
-        index += 1
-
-        teacher_script_target = translations[index]
-        index += 1
-
-        activity_target = translations[index]
-        index += 1
-
-        assessment_target = translations[
-            index:index + len(lesson["assessment"])
-        ]
-
-        index += len(lesson["assessment"])
-
-        home_activity_target = translations[index]
+        latency = round(
+            time.perf_counter() - start_time,
+            3,
+        )
 
         return {
-
             "success": True,
-
-            "class_name":
-                request.class_name,
-
-            "subject":
-                request.subject,
-
-            "lesson":
-                request.lesson,
-
-            "target_language":
-                request.target_language,
-
-            "learning_objective": {
-                "hindi":
-                    lesson["learning_objective"],
-
-                "target":
-                    learning_objective_target,
-            },
-
-            "teacher_script": {
-                "hindi":
-                    lesson["teacher_script_hindi"],
-
-                "target":
-                    teacher_script_target,
-            },
-
-            "activity": {
-                "title":
-                    activity["title"],
-
-                "instructions": {
-                    "hindi":
-                        activity["instructions_hindi"],
-
-                    "target":
-                        activity_target,
-                },
-
-                "materials":
-                    activity["materials"],
-            },
-
-            "assessment": [
-
-                {
-                    "hindi": h,
-                    "target": t,
-                }
-
-                for h, t in zip(
-                    lesson["assessment"],
-                    assessment_target,
-                )
-            ],
-
-            "home_activity": {
-                "hindi":
-                    lesson["home_activity"],
-
-                "target":
-                    home_activity_target,
-            },
-
-            "translation_engine":
-                "IndicTrans2",
+            "source_text": request.text,
+            "translated_text": translated_text,
+            "source_language": request.source_language,
+            "target_language": request.target_language,
+            "latency_seconds": latency,
         }
 
     except Exception as e:
 
+        print("Translation error:", repr(e))
+
         raise HTTPException(
             status_code=500,
-            detail=str(e),
+            detail=f"Translation failed: {str(e)}",
         )
 
+
+# ============================================================
+# LESSON GENERATOR
+# ============================================================
+
+@app.post("/lesson/generate")
+def generate_lesson(request: LessonRequest):
+
+    prompt = f"""
+You are an AI pedagogy assistant for primary education.
+
+Create a simple bilingual lesson for:
+
+Class:
+{request.class_name}
+
+Subject:
+{request.subject}
+
+Lesson:
+{request.lesson}
+
+Target mother tongue:
+{request.target_language}
+
+The lesson must support foundational learning.
+
+Return the result in this structure:
+
+TITLE:
+...
+
+LEARNING OBJECTIVE:
+...
+
+TEACHER INTRODUCTION:
+...
+
+ACTIVITY:
+...
+
+ASSESSMENT:
+...
+
+TEACHER TIP:
+...
+
+MOTHER TONGUE SUPPORT:
+...
+
+Keep the content simple, practical and suitable
+for a real classroom.
+"""
+
+    try:
+
+        result = generate_text(
+            prompt,
+            temperature=0.4,
+            max_tokens=1800,
+        )
+
+        return {
+            "success": True,
+            "class_name": request.class_name,
+            "subject": request.subject,
+            "lesson": request.lesson,
+            "target_language": request.target_language,
+            "content": result,
+        }
+
+    except Exception as e:
+
+        print("Lesson generation error:", repr(e))
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Lesson generation failed: {str(e)}",
+        )
+
+
+# ============================================================
+# WORKSHEET GENERATOR
+# ============================================================
 
 @app.post("/worksheet/generate")
-def create_worksheet(request: WorksheetRequest):
+def generate_worksheet(request: WorksheetRequest):
+
+    prompt = f"""
+Create a primary-school bilingual worksheet.
+
+GRADE:
+{request.grade}
+
+CLASS:
+{request.class_name}
+
+SUBJECT:
+{request.subject}
+
+LESSON:
+{request.lesson}
+
+NIPUN BHARAT LEARNING OUTCOME:
+{request.learning_outcome}
+
+Create simple activities suitable for foundational
+literacy or numeracy.
+
+Return:
+
+WORKSHEET TITLE:
+...
+
+LEARNING OUTCOME:
+...
+
+QUESTION 1:
+...
+
+QUESTION 2:
+...
+
+QUESTION 3:
+...
+
+QUESTION 4:
+...
+
+QUESTION 5:
+...
+
+TEACHER INSTRUCTION:
+...
+
+ANSWER KEY:
+...
+
+Use child-friendly language.
+Keep questions practical and easy to print.
+"""
 
     try:
 
-        worksheet = generate_worksheet(
-            class_name=request.class_name,
-            subject=request.subject,
-            lesson=request.lesson,
-            grade=request.grade,
-            learning_outcome=request.learning_outcome,
+        result = generate_text(
+            prompt,
+            temperature=0.4,
+            max_tokens=1800,
         )
-
-        questions = worksheet["questions"]
-
-        hindi_texts = [
-            worksheet["title"],
-            worksheet["learning_outcome"],
-            *[
-                question["question"]
-                for question in questions
-            ],
-        ]
-
-        if indictrans.available:
-            translations = indictrans.translate_many(
-                hindi_texts
-            )
-        else:
-            translations = hindi_texts
 
         return {
             "success": True,
-
-            "title": {
-                "hindi": worksheet["title"],
-                "target": translations[0],
-            },
-
-            "grade": worksheet.get("grade", request.grade),
-            "subject": worksheet.get("subject", request.subject),
-            "learning_outcome": {
-                "hindi":
-                    worksheet["learning_outcome"],
-
-                "target":
-                    translations[1],
-            },
-
-             "questions": [
-                {
-                    "number": index + 1,
-                    "hindi":
-                        question["question"],
-                    "target":
-                        translations[index + 2],
-                    "answer":
-                        question["answer"],
-                }
-                for index, question
-                in enumerate(questions)
-            ],
-
-            "translation_engine":
-                "IndicTrans2",
+            "grade": request.grade,
+            "subject": request.subject,
+            "learning_outcome": request.learning_outcome,
+            "content": result,
         }
 
     except Exception as e:
 
+        print("Worksheet generation error:", repr(e))
+
         raise HTTPException(
             status_code=500,
-            detail=str(e),
+            detail=f"Worksheet generation failed: {str(e)}",
         )
 
+
+# ============================================================
+# FLASHCARD GENERATOR
+# ============================================================
 
 @app.post("/flashcards/generate")
-def create_flashcards(
-    request: FlashcardRequest
-):
+def generate_flashcards(request: FlashcardRequest):
+
+    prompt = f"""
+Create visual-learning flashcards for primary-school
+children.
+
+CLASS:
+{request.class_name}
+
+SUBJECT:
+{request.subject}
+
+LESSON:
+{request.lesson}
+
+Generate 6 flashcards.
+
+For each flashcard provide:
+
+CARD 1
+WORD:
+MEANING:
+CHILD-FRIENDLY SENTENCE:
+VISUAL IDEA:
+
+CARD 2
+WORD:
+MEANING:
+CHILD-FRIENDLY SENTENCE:
+VISUAL IDEA:
+
+Continue until CARD 6.
+
+Focus on simple foundational vocabulary.
+"""
 
     try:
 
-        data = generate_flashcards(
-            class_name=request.class_name,
-            subject=request.subject,
-            lesson=request.lesson,
+        result = generate_text(
+            prompt,
+            temperature=0.5,
+            max_tokens=1800,
         )
 
-        cards = data["cards"]
-
-        texts = [
-            card["label_hindi"]
-            for card in cards
-        ]
-
-        if indictrans.available:
-            translations = (
-                indictrans.translate_many(texts)
-            )
-        else:
-            translations = texts
-
-        bilingual_cards = []
-
-        for card, translation in zip(
-            cards,
-            translations,
-        ):
-
-            bilingual_cards.append({
-
-                "concept":
-                    card["concept"],
-
-                "label_hindi":
-                    card["label_hindi"],
-
-                "label_santali":
-                    translation,
-
-                "visual_type":
-                    card["visual_type"],
-
-                "object":
-                    card["object"],
-
-                "count":
-                    card["count"],
-            })
-
         return {
-
             "success": True,
-
-            "title":
-                data["title"],
-
-            "cards":
-                bilingual_cards,
-
-            "translation_engine":
-                "IndicTrans2",
+            "class_name": request.class_name,
+            "subject": request.subject,
+            "lesson": request.lesson,
+            "content": result,
         }
 
     except Exception as e:
 
+        print("Flashcard generation error:", repr(e))
+
         raise HTTPException(
             status_code=500,
-            detail=str(e),
+            detail=f"Flashcard generation failed: {str(e)}",
         )
+
+
+# ============================================================
+# STARTUP
+# ============================================================
+
+@app.on_event("startup")
+async def startup_event():
+
+    print("=" * 60)
+    print("TRIBAL LINGUA AI BACKEND")
+    print("=" * 60)
+    print("FastAPI server started")
+    print("Translation engine: Groq AI")
+    print("Target language: Santali")
+    print("=" * 60)

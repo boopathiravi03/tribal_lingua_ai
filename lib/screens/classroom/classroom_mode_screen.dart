@@ -66,7 +66,9 @@ class _ClassroomModeScreenState
     });
 
     await speech.listen(
-      localeId: teacherMode ? 'hi_IN' : 'sat_IN',
+      listenOptions: stt.SpeechListenOptions(
+        localeId: teacherMode ? 'hi_IN' : 'sat_IN',
+      ),
       onResult: (result) {
         if (!mounted) return;
 
